@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.zportfolio.preview</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/mac/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback/pnpm</string>
+    <string>dev</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/mac/Desktop/Web/Zportfolio</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/Users/mac/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/mac/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/usr/bin:/bin</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/tmp/zportfolio-preview.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/zportfolio-preview-error.log</string>
+</dict>
+</plist>

@@ -4,3 +4,6 @@ dist/
 .codex-*.log
 .DS_Store
 tmp/
+qa/
+*.log
+.vite/

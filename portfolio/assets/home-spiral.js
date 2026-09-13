@@ -41,7 +41,7 @@ class HomeSpiral {
     }
     const signal = this.events.signal;
     root.querySelectorAll('[data-spiral-go]').forEach(button => {
-      button.addEventListener('click', () => this.leave(button.dataset.spiralGo), { signal });
+      button.addEventListener('click', () => this.leave(), { signal });
     });
     document.querySelectorAll('[data-spiral-enter]').forEach(button => {
       button.addEventListener('click', () => this.requestEntry(), { signal });
@@ -103,7 +103,7 @@ class HomeSpiral {
     window.addEventListener('keydown', event => {
       if (!this.ownsScroll() || event.altKey || event.ctrlKey || event.metaKey) return;
       if (event.target.closest('input, textarea, select, [contenteditable="true"]')) return;
-      if (event.key === 'Escape') { event.preventDefault(); this.leave('back'); return; }
+      if (event.key === 'Escape') { event.preventDefault(); this.leave(); return; }
       if (event.target.closest('button, a')) return;
       const directions = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1, PageDown: 1, PageUp: -1, ' ': event.shiftKey ? -1 : 1 };
       if (directions[event.key]) {
@@ -115,9 +115,9 @@ class HomeSpiral {
             this.bridge.moveTo((this.bridge.read()?.current ?? 0) + directions[event.key] * 120);
           } else if (!event.repeat && performance.now() - this.waitingSince >= 220) this.enter();
         } else if (this.state === 'active') this.experience.controls.onWheel(directions[event.key] * 110);
-      } else if (event.key === 'Home' || event.key === 'End') {
+      } else if (event.key === 'Home') {
         event.preventDefault();
-        this.leave(event.key === 'Home' ? 'back' : 'connect');
+        this.leave();
       }
     }, { capture: true, signal });
     this.bridge.setFrame(() => this.update());
@@ -156,6 +156,7 @@ class HomeSpiral {
 
   fallback() {
     setGalleryMusic(false);
+    this.bridge.setHeaderVisible(true);
     this.ready = false;
     this.root.classList.remove('is-loading', 'is-ready', 'is-active', 'is-presenting');
     this.root.classList.add('is-fallback');
@@ -167,6 +168,7 @@ class HomeSpiral {
 
   enter() {
     this.state = 'entering';
+    this.bridge.setHeaderVisible(false);
     clearWheel();
     this.root.classList.add('is-active', 'is-presenting');
     setGalleryMusic(true);
@@ -174,11 +176,12 @@ class HomeSpiral {
     this.startTransition(this.root, 'active');
   }
 
-  leave(direction) {
+  leave() {
     if (this.state === 'leaving') return;
-    const target = document.querySelector(direction === 'back' ? '.home_about' : '.home_contact');
+    const target = document.querySelector('.home_hero_c');
     if (!target) return;
     this.state = 'leaving';
+    this.bridge.setHeaderVisible(true);
     setGalleryMusic(false);
     clearWheel();
     this.root.classList.remove('is-active');
@@ -188,11 +191,11 @@ class HomeSpiral {
       this.experience.controls.targetWheelDeltaY = 0;
       this.experience.controls.wheelDeltaY = 0;
     }
-    this.startTransition(target, 'idle', direction === 'connect');
+    this.startTransition(target, 'idle');
   }
 
-  startTransition(target, after, toBottom = false) {
-    this.transition = { target, after, toBottom, from: this.bridge.read()?.current ?? 0, started: performance.now(), duration: this.motion.matches ? 0 : after === 'active' ? 860 : 850 };
+  startTransition(target, after) {
+    this.transition = { target, after, from: this.bridge.read()?.current ?? 0, started: performance.now(), duration: this.motion.matches ? 0 : after === 'active' ? 860 : 850 };
   }
 
   update() {
@@ -225,10 +228,8 @@ class HomeSpiral {
       const transition = this.transition;
       const progress = transition.duration ? clamp((performance.now() - transition.started) / transition.duration, 0, 1) : 1;
       const eased = transition.after === 'active' ? progress * progress * progress * (progress * (progress * 6 - 15) + 10) : 1 - Math.pow(1 - progress, 3);
-      // Short about sections still return to a full viewport with no gallery peek.
-      const targetTop = transition.target.matches('.home_about') ? Math.min(sectionTop(transition.target), this.boundary(1)) : sectionTop(transition.target);
-      // Connect lands at the page end, including the full contact section and footer.
-      const destination = transition.toBottom ? page.limit : clamp(targetTop, 0, page.limit);
+      // The hero includes the page's header inset; return to the actual page top.
+      const destination = transition.target.matches('.home_hero_c') ? 0 : clamp(sectionTop(transition.target), 0, page.limit);
       this.bridge.moveTo(transition.from + (destination - transition.from) * eased, true);
       if (progress === 1) {
         this.state = transition.after;
@@ -253,7 +254,8 @@ class HomeSpiral {
       const after = this.boundary(-1);
       // Clamp the target before the legacy scroller advances: even a fast wheel
       // gesture cannot leave the next frame resting halfway through the gallery.
-      if (this.lastPosition < top && page.target >= before && page.target >= position) {
+      if (this.lastPosition < top && page.target >= before && page.target >= position &&
+          (page.target > position + 0.1 || position > before + 0.75)) {
         if (position >= before - 0.75) this.pauseAtBoundary(1);
         else this.bridge.moveTo(before);
       } else if (this.lastPosition >= top && page.target <= after && page.target <= position) {
@@ -266,6 +268,7 @@ class HomeSpiral {
 
   destroy() {
     setGalleryMusic(false);
+    this.bridge.setHeaderVisible(true);
     this.events.abort();
     this.bridge.setFrame(null);
     this.experience?.destroy();
